@@ -56,10 +56,19 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     if (body.sil_id) {
       await deleteBlog(body.sil_id);
     } else if (body.guncelle_id) {
-      await updateBlog(body.guncelle_id, body.baslik!, body.icerik!, body.tarih!);
+      await updateBlog(Number(body.guncelle_id), {
+        baslik: body.baslik,
+        icerik: body.icerik,
+        tarih: body.tarih
+      });
     } else if (body.baslik && body.icerik) {
       const tarih = new Date().toISOString().slice(0, 10);
-      await addBlog(body.baslik, body.icerik, tarih);
+      await addBlog({
+        baslik: body.baslik,
+        icerik: body.icerik,
+        tarih: tarih,
+        yazar: 'Admin'
+      });
     }
     return {
       redirect: {
