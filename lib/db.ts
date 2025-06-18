@@ -328,4 +328,28 @@ export async function addGaleri(data: {
     console.error('Galeri ekleme hatası:', error);
     throw error;
   }
+}
+
+export async function updateGaleri(id: number, data: {
+  baslik?: string;
+  resim?: string;
+  aciklama?: string;
+  kategori?: string;
+}) {
+  try {
+    const result = await sql`
+      UPDATE galeri 
+      SET 
+        baslik = COALESCE(${data.baslik}, baslik),
+        resim = COALESCE(${data.resim}, resim),
+        aciklama = COALESCE(${data.aciklama}, aciklama),
+        kategori = COALESCE(${data.kategori}, kategori)
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    return result.rows[0];
+  } catch (error) {
+    console.error('Galeri güncelleme hatası:', error);
+    throw error;
+  }
 } 
