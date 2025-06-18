@@ -65,9 +65,17 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     if (body.sil_id) {
       await deleteGaleri(body.sil_id);
     } else if (body.guncelle_id) {
-      await updateGaleri(body.guncelle_id, body.baslik!, body.medyaUrl!, body.tip!);
+      await updateGaleri(Number(body.guncelle_id), {
+        baslik: body.baslik,
+        resim: body.medyaUrl,
+        kategori: body.tip
+      });
     } else if (body.baslik && body.medyaUrl && body.tip) {
-      await addGaleri(body.baslik, body.medyaUrl, body.tip);
+      await addGaleri({
+        baslik: body.baslik,
+        resim: body.medyaUrl,
+        kategori: body.tip
+      });
     }
     return {
       redirect: {
