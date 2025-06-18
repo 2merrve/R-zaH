@@ -309,4 +309,23 @@ export async function updateBlog(id: number, data: {
     console.error('Blog güncelleme hatası:', error);
     throw error;
   }
+}
+
+export async function addGaleri(data: {
+  baslik: string;
+  resim: string;
+  aciklama?: string;
+  kategori?: string;
+}) {
+  try {
+    const result = await sql`
+      INSERT INTO galeri (baslik, resim, aciklama, kategori)
+      VALUES (${data.baslik}, ${data.resim}, ${data.aciklama}, ${data.kategori})
+      RETURNING *
+    `;
+    return result.rows[0];
+  } catch (error) {
+    console.error('Galeri ekleme hatası:', error);
+    throw error;
+  }
 } 
