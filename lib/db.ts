@@ -2,59 +2,64 @@ import { sql } from '@vercel/postgres';
 import bcrypt from 'bcryptjs';
 
 export async function initDb() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      name TEXT
-    );
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        name TEXT
+      );
 
-    CREATE TABLE IF NOT EXISTS hizmetler (
-      id SERIAL PRIMARY KEY,
-      baslik TEXT NOT NULL,
-      aciklama TEXT NOT NULL,
-      gorselUrl TEXT
-    );
+      CREATE TABLE IF NOT EXISTS hizmetler (
+        id SERIAL PRIMARY KEY,
+        baslik TEXT NOT NULL,
+        aciklama TEXT NOT NULL,
+        gorselUrl TEXT
+      );
 
-    CREATE TABLE IF NOT EXISTS projeler (
-      id SERIAL PRIMARY KEY,
-      baslik TEXT NOT NULL,
-      aciklama TEXT NOT NULL,
-      durum TEXT NOT NULL,
-      gorselUrl TEXT
-    );
+      CREATE TABLE IF NOT EXISTS projeler (
+        id SERIAL PRIMARY KEY,
+        baslik TEXT NOT NULL,
+        aciklama TEXT NOT NULL,
+        durum TEXT NOT NULL,
+        gorselUrl TEXT
+      );
 
-    CREATE TABLE IF NOT EXISTS blog (
-      id SERIAL PRIMARY KEY,
-      baslik TEXT NOT NULL,
-      icerik TEXT NOT NULL,
-      tarih TEXT NOT NULL
-    );
+      CREATE TABLE IF NOT EXISTS blog (
+        id SERIAL PRIMARY KEY,
+        baslik TEXT NOT NULL,
+        icerik TEXT NOT NULL,
+        tarih TEXT NOT NULL
+      );
 
-    CREATE TABLE IF NOT EXISTS galeri (
-      id SERIAL PRIMARY KEY,
-      baslik TEXT NOT NULL,
-      medyaUrl TEXT NOT NULL,
-      tip TEXT NOT NULL
-    );
+      CREATE TABLE IF NOT EXISTS galeri (
+        id SERIAL PRIMARY KEY,
+        baslik TEXT NOT NULL,
+        medyaUrl TEXT NOT NULL,
+        tip TEXT NOT NULL
+      );
 
-    CREATE TABLE IF NOT EXISTS iletisim (
-      id SERIAL PRIMARY KEY,
-      adSoyad TEXT NOT NULL,
-      email TEXT NOT NULL,
-      mesaj TEXT NOT NULL,
-      tarih TEXT NOT NULL
-    );
-  `;
+      CREATE TABLE IF NOT EXISTS iletisim (
+        id SERIAL PRIMARY KEY,
+        adSoyad TEXT NOT NULL,
+        email TEXT NOT NULL,
+        mesaj TEXT NOT NULL,
+        tarih TEXT NOT NULL
+      );
+    `;
 
-  // Admin kullanıcısı ekle
-  const hashedPassword = await bcrypt.hash('password', 10);
-  await sql`
-    INSERT INTO users (email, password)
-    VALUES ('admin@example.com', ${hashedPassword})
-    ON CONFLICT (email) DO NOTHING;
-  `;
+    // Admin kullanıcısı ekle
+    const hashedPassword = await bcrypt.hash('password', 10);
+    await sql`
+      INSERT INTO users (email, password)
+      VALUES ('admin@example.com', ${hashedPassword})
+      ON CONFLICT (email) DO NOTHING;
+    `;
+  } catch (error) {
+    console.error('Database initialization error:', error);
+    throw error;
+  }
 }
 
 interface User {
@@ -65,107 +70,197 @@ interface User {
 }
 
 export async function verifyUser(email: string, password: string): Promise<User | null> {
-  const result = await sql`SELECT * FROM users WHERE email = ${email}`;
-  const user = result.rows[0] as User | undefined;
+  try {
+    const result = await sql`SELECT * FROM users WHERE email = ${email}`;
+    const user = result.rows[0] as User | undefined;
 
-  if (user && user.password && await bcrypt.compare(password, user.password)) {
-    return user;
+    if (user && user.password && await bcrypt.compare(password, user.password)) {
+      return user;
+    }
+    return null;
+  } catch (error) {
+    console.error('User verification error:', error);
+    return null;
   }
-  return null;
 }
 
 export async function getHizmetler() {
-  const result = await sql`SELECT * FROM hizmetler`;
-  return result.rows;
+  try {
+    const result = await sql`SELECT * FROM hizmetler`;
+    return result.rows;
+  } catch (error) {
+    console.error('Get hizmetler error:', error);
+    return [];
+  }
 }
 
 export async function addHizmet(baslik: string, aciklama: string, gorselUrl: string | null) {
-  return sql`
-    INSERT INTO hizmetler (baslik, aciklama, gorselUrl)
-    VALUES (${baslik}, ${aciklama}, ${gorselUrl})
-    RETURNING *
-  `;
+  try {
+    return await sql`
+      INSERT INTO hizmetler (baslik, aciklama, gorselUrl)
+      VALUES (${baslik}, ${aciklama}, ${gorselUrl})
+      RETURNING *
+    `;
+  } catch (error) {
+    console.error('Add hizmet error:', error);
+    throw error;
+  }
 }
 
 export async function deleteHizmet(id: string) {
-  return sql`DELETE FROM hizmetler WHERE id = ${id}`;
+  try {
+    return await sql`DELETE FROM hizmetler WHERE id = ${id}`;
+  } catch (error) {
+    console.error('Delete hizmet error:', error);
+    throw error;
+  }
 }
 
 export async function getProjeler() {
-  const result = await sql`SELECT * FROM projeler`;
-  return result.rows;
+  try {
+    const result = await sql`SELECT * FROM projeler`;
+    return result.rows;
+  } catch (error) {
+    console.error('Get projeler error:', error);
+    return [];
+  }
 }
 
 export async function addProje(baslik: string, aciklama: string, durum: string, gorselUrl: string | null) {
-  return sql`
-    INSERT INTO projeler (baslik, aciklama, durum, gorselUrl)
-    VALUES (${baslik}, ${aciklama}, ${durum}, ${gorselUrl})
-    RETURNING *
-  `;
+  try {
+    return await sql`
+      INSERT INTO projeler (baslik, aciklama, durum, gorselUrl)
+      VALUES (${baslik}, ${aciklama}, ${durum}, ${gorselUrl})
+      RETURNING *
+    `;
+  } catch (error) {
+    console.error('Add proje error:', error);
+    throw error;
+  }
 }
 
 export async function deleteProje(id: string) {
-  return sql`DELETE FROM projeler WHERE id = ${id}`;
+  try {
+    return await sql`DELETE FROM projeler WHERE id = ${id}`;
+  } catch (error) {
+    console.error('Delete proje error:', error);
+    throw error;
+  }
 }
 
 export async function getBlog() {
-  const result = await sql`SELECT * FROM blog`;
-  return result.rows;
+  try {
+    const result = await sql`SELECT * FROM blog`;
+    return result.rows;
+  } catch (error) {
+    console.error('Get blog error:', error);
+    return [];
+  }
 }
 
 export async function deleteBlog(id: string) {
-  return sql`DELETE FROM blog WHERE id = ${id}`;
+  try {
+    return await sql`DELETE FROM blog WHERE id = ${id}`;
+  } catch (error) {
+    console.error('Delete blog error:', error);
+    throw error;
+  }
 }
 
 export async function getGaleri() {
-  const result = await sql`SELECT * FROM galeri`;
-  return result.rows;
+  try {
+    const result = await sql`SELECT * FROM galeri`;
+    return result.rows;
+  } catch (error) {
+    console.error('Get galeri error:', error);
+    return [];
+  }
 }
 
 export async function deleteGaleri(id: string) {
-  return sql`DELETE FROM galeri WHERE id = ${id}`;
+  try {
+    return await sql`DELETE FROM galeri WHERE id = ${id}`;
+  } catch (error) {
+    console.error('Delete galeri error:', error);
+    throw error;
+  }
 }
 
 export async function getIletisim() {
-  const result = await sql`SELECT * FROM iletisim`;
-  return result.rows;
+  try {
+    const result = await sql`SELECT * FROM iletisim`;
+    return result.rows;
+  } catch (error) {
+    console.error('Get iletisim error:', error);
+    return [];
+  }
 }
 
 export async function addIletisim(adSoyad: string, email: string, mesaj: string, tarih: string) {
-  return sql`
-    INSERT INTO iletisim (adSoyad, email, mesaj, tarih)
-    VALUES (${adSoyad}, ${email}, ${mesaj}, ${tarih})
-    RETURNING *
-  `;
+  try {
+    return await sql`
+      INSERT INTO iletisim (adSoyad, email, mesaj, tarih)
+      VALUES (${adSoyad}, ${email}, ${mesaj}, ${tarih})
+      RETURNING *
+    `;
+  } catch (error) {
+    console.error('Add iletisim error:', error);
+    throw error;
+  }
 }
 
 export async function deleteIletisim(id: string) {
-  return sql`DELETE FROM iletisim WHERE id = ${id}`;
+  try {
+    return await sql`DELETE FROM iletisim WHERE id = ${id}`;
+  } catch (error) {
+    console.error('Delete iletisim error:', error);
+    throw error;
+  }
 }
 
 export async function addUser(name: string, email: string, password: string) {
-  const hashedPassword = await bcrypt.hash(password, 10);
-  return sql`
-    INSERT INTO users (name, email, password)
-    VALUES (${name}, ${email}, ${hashedPassword})
-    RETURNING *
-  `;
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    return await sql`
+      INSERT INTO users (name, email, password)
+      VALUES (${name}, ${email}, ${hashedPassword})
+      RETURNING *
+    `;
+  } catch (error) {
+    console.error('Add user error:', error);
+    throw error;
+  }
 }
 
 export async function getUsers(): Promise<User[]> {
-  const result = await sql`SELECT id, name, email FROM users`;
-  return result.rows as User[];
+  try {
+    const result = await sql`SELECT id, name, email FROM users`;
+    return result.rows as User[];
+  } catch (error) {
+    console.error('Get users error:', error);
+    return [];
+  }
 }
 
 export async function updateUser(id: number, name: string, email: string) {
-  return sql`
-    UPDATE users 
-    SET name = ${name}, email = ${email}
-    WHERE id = ${id}
-    RETURNING *
-  `;
+  try {
+    return await sql`
+      UPDATE users 
+      SET name = ${name}, email = ${email}
+      WHERE id = ${id}
+      RETURNING *
+    `;
+  } catch (error) {
+    console.error('Update user error:', error);
+    throw error;
+  }
 }
 
 export async function deleteUser(id: number) {
-  return sql`DELETE FROM users WHERE id = ${id}`;
+  try {
+    return await sql`DELETE FROM users WHERE id = ${id}`;
+  } catch (error) {
+    console.error('Delete user error:', error);
+    throw error;
+  }
 } 
