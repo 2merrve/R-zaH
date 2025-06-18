@@ -263,4 +263,24 @@ export async function deleteUser(id: number) {
     console.error('Delete user error:', error);
     throw error;
   }
+}
+
+export async function addBlog(data: {
+  baslik: string;
+  icerik: string;
+  resim?: string;
+  yazar: string;
+  tarih: string;
+}) {
+  try {
+    const result = await sql`
+      INSERT INTO blog (baslik, icerik, resim, yazar, tarih)
+      VALUES (${data.baslik}, ${data.icerik}, ${data.resim}, ${data.yazar}, ${data.tarih})
+      RETURNING *
+    `;
+    return result.rows[0];
+  } catch (error) {
+    console.error('Blog ekleme hatası:', error);
+    throw error;
+  }
 } 
