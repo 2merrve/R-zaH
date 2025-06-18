@@ -2,32 +2,34 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { verifyUser } from '../../../lib/db'; // Yolu doğru ayarlayın
 import { serialize } from 'cookie';
 
-export default async function login(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+    req: NextApiRequest,
+    res: NextApiResponse
+) {
     if (req.method !== 'POST') {
-        return res.status(405).json({ message: 'Sadece POST istekleri kabul edilir.' });
+        res.setHeader('Allow', ['POST']);
+        res.status(405).end(`Method ${req.method} Not Allowed`);
+        return;
     }
 
-    const { email, sifre } = req.body;
+    const { email, password } = req.body;
 
     try {
-        const user = await verifyUser(email, sifre);
-
+        const user = await verifyUser(email, password);
         if (user) {
-            // Basit bir oturum yönetimi için çerez oluştur
-            const cookie = serialize('auth', JSON.stringify({ userId: user.id, email: user.email, name: user.name }), {
+            res.setHeader('Set-Cookie', serialize('user', JSON.stringify(user), {
                 httpOnly: true,
-                secure: process.env.NODE_ENV !== 'development', // HTTPS üzerinde çalışırken true olmalı
-                maxAge: 60 * 60 * 24 * 7, // 1 hafta
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 60 * 60 * 24 * 7, // 1 week
                 path: '/',
-            });
-
-            res.setHeader('Set-Cookie', cookie);
-            return res.status(200).json({ message: 'Giriş başarılı!', user: { id: user.id, email: user.email, name: user.name } });
+            }));
+            res.status(200).json({ success: true });
         } else {
-            return res.status(401).json({ message: 'Geçersiz e-posta veya şifre.' });
+            res.status(401).json({ error: 'Invalid credentials' });
         }
     } catch (error) {
-        console.error('Giriş hatası:', error);
-        return res.status(500).json({ message: 'Sunucu hatası oluştu.' });
+        console.error('Login error:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 } 
