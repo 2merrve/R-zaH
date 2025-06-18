@@ -1,15 +1,21 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import fs from 'fs';
-import path from 'path';
+import { GetServerSideProps } from 'next';
 
-export async function getStaticProps() {
-  const filePath = path.join(process.cwd(), 'data', 'projects.json');
-  const fileData = fs.readFileSync(filePath, 'utf-8');
-  const projects = JSON.parse(fileData);
-  return { props: { projects } };
-}
+export const getServerSideProps: GetServerSideProps = async () => {
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const filePath = path.join(process.cwd(), 'data', 'projects.json');
+    const fileData = fs.readFileSync(filePath, 'utf-8');
+    const projects = JSON.parse(fileData);
+    return { props: { projects } };
+  } catch (error) {
+    console.error('Projeler yüklenirken hata:', error);
+    return { props: { projects: [] } };
+  }
+};
 
 export default function Home({ projects = [] }) {
   return (

@@ -9,29 +9,9 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        fs: false,
-        bcrypt: false,
-        net: false,
-        tls: false,
-        crypto: false,
-        stream: false,
-        path: false,
-        os: false,
-        zlib: false,
-        http: false,
-        https: false,
-        util: false,
-        assert: false,
-        url: false,
-        buffer: false,
-        process: false
-      };
-    }
-    return config;
-  },
+  experimental: {
+    serverComponentsExternalPackages: ['formidable']
+  }
 };
 
 module.exports = nextConfig; 

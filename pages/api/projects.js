@@ -1,6 +1,6 @@
+import formidable from 'formidable';
 import fs from 'fs';
 import path from 'path';
-import formidable from 'formidable';
 
 const projectsFilePath = path.join(process.cwd(), 'data', 'projects.json');
 const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
@@ -12,93 +12,101 @@ if (!fs.existsSync(uploadsDir)) {
 
 export const config = {
   api: {
-    bodyParser: false, // Disable default body parser
+    bodyParser: false,
   },
 };
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      const projectsData = fs.readFileSync(projectsFilePath, 'utf-8');
-      res.status(200).json(JSON.parse(projectsData));
+      const filePath = path.join(process.cwd(), 'data', 'projects.json');
+      const fileData = fs.readFileSync(filePath, 'utf-8');
+      const projects = JSON.parse(fileData);
+      res.status(200).json(projects);
     } catch (error) {
-      console.error('Error reading projects file:', error);
-      res.status(500).json({ message: 'Error reading projects' });
+      console.error('Projeler okuma hatası:', error);
+      res.status(500).json({ error: 'Projeler yüklenirken hata oluştu' });
     }
+  } else if (req.method === 'POST') {
+    try {
+      const form = formidable();
+      const [fields, files] = await form.parse(req);
 
-  } else if (req.method === 'POST' || req.method === 'PUT') {
-    const form = formidable({
-      uploadDir: uploadsDir,
-      keepExtensions: true,
-    });
+      const filePath = path.join(process.cwd(), 'data', 'projects.json');
+      const fileData = fs.readFileSync(filePath, 'utf-8');
+      const projects = JSON.parse(fileData);
 
-    form.parse(req, async (err, fields, files) => {
-      if (err) {
-        console.error('Error parsing form:', err);
-        return res.status(500).json({ message: 'Error uploading file' });
+      const newProject = {
+        id: Date.now(),
+        name: [fields.name?.[0] || ''],
+        description: [fields.description?.[0] || ''],
+        status: [fields.status?.[0] || 'planlandı'],
+        location: [fields.location?.[0] || ''],
+        startDate: [fields.startDate?.[0] || ''],
+        endDate: fields.endDate?.[0] ? [fields.endDate[0]] : undefined,
+        image: files.image?.[0] ? `/uploads/${files.image[0].newFilename}` : '',
+        createdAt: [new Date().toISOString()],
+        updatedAt: new Date().toISOString()
+      };
+
+      projects.push(newProject);
+      fs.writeFileSync(filePath, JSON.stringify(projects, null, 2));
+
+      res.status(201).json(newProject);
+    } catch (error) {
+      console.error('Proje ekleme hatası:', error);
+      res.status(500).json({ error: 'Proje eklenirken hata oluştu' });
+    }
+  } else if (req.method === 'PUT') {
+    try {
+      const { id } = req.query;
+      const form = formidable();
+      const [fields, files] = await form.parse(req);
+
+      const filePath = path.join(process.cwd(), 'data', 'projects.json');
+      const fileData = fs.readFileSync(filePath, 'utf-8');
+      const projects = JSON.parse(fileData);
+
+      const projectIndex = projects.findIndex(p => p.id === parseInt(id));
+      if (projectIndex === -1) {
+        return res.status(404).json({ error: 'Proje bulunamadı' });
       }
 
-      try {
-        const projectsData = fs.readFileSync(projectsFilePath, 'utf-8');
-        const projects = JSON.parse(projectsData);
+      projects[projectIndex] = {
+        ...projects[projectIndex],
+        name: [fields.name?.[0] || projects[projectIndex].name?.[0] || ''],
+        description: [fields.description?.[0] || projects[projectIndex].description?.[0] || ''],
+        status: [fields.status?.[0] || projects[projectIndex].status?.[0] || 'planlandı'],
+        location: [fields.location?.[0] || projects[projectIndex].location?.[0] || ''],
+        startDate: [fields.startDate?.[0] || projects[projectIndex].startDate?.[0] || ''],
+        endDate: fields.endDate?.[0] ? [fields.endDate[0]] : projects[projectIndex].endDate,
+        image: files.image?.[0] ? `/uploads/${files.image[0].newFilename}` : projects[projectIndex].image,
+        updatedAt: new Date().toISOString()
+      };
 
-        let updatedProjects = [...projects];
-        let projectData = {
-          ...fields,
-          // Assuming single file upload for now
-          image: files.image ? `/uploads/${path.basename(files.image[0].filepath)}` : (req.method === 'PUT' ? null : undefined), // Keep existing image on PUT if no new file
-          updatedAt: new Date().toISOString(),
-        };
+      fs.writeFileSync(filePath, JSON.stringify(projects, null, 2));
+      res.status(200).json(projects[projectIndex]);
+    } catch (error) {
+      console.error('Proje güncelleme hatası:', error);
+      res.status(500).json({ error: 'Proje güncellenirken hata oluştu' });
+    }
+  } else if (req.method === 'DELETE') {
+    try {
+      const { id } = req.query;
+      const filePath = path.join(process.cwd(), 'data', 'projects.json');
+      const fileData = fs.readFileSync(filePath, 'utf-8');
+      const projects = JSON.parse(fileData);
 
-        if (req.method === 'POST') {
-          // Add new project
-          const newProject = {
-            id: Date.now(), // Simple ID
-            ...projectData,
-            createdAt: new Date().toISOString(),
-          };
-          updatedProjects.push(newProject);
-          res.status(201).json(newProject);
+      const filteredProjects = projects.filter(p => p.id !== parseInt(id));
+      fs.writeFileSync(filePath, JSON.stringify(filteredProjects, null, 2));
 
-        } else { // req.method === 'PUT'
-          // Update existing project
-          const projectId = req.query.id;
-          if (!projectId) {
-            return res.status(400).json({ message: 'Project ID is required' });
-          }
-
-          const projectIndex = updatedProjects.findIndex(p => p.id === parseInt(projectId, 10));
-
-          if (projectIndex > -1) {
-            // If no new image is uploaded, retain the old image path
-            if (!files.image && updatedProjects[projectIndex].image) {
-              projectData.image = updatedProjects[projectIndex].image;
-            }
-             // Ensure ID is not overwritten by form fields
-            delete projectData.id;
-
-            updatedProjects[projectIndex] = {
-              ...updatedProjects[projectIndex],
-              ...projectData,
-               id: parseInt(projectId, 10), // Ensure ID is correct integer
-            };
-            res.status(200).json(updatedProjects[projectIndex]);
-          } else {
-            return res.status(404).json({ message: 'Project not found' });
-          }
-        }
-
-        // Save updated projects data
-        fs.writeFileSync(projectsFilePath, JSON.stringify(updatedProjects, null, 2));
-
-      } catch (fileReadError) {
-        console.error('Error processing project data:', fileReadError);
-        res.status(500).json({ message: 'Error processing project data' });
-      }
-    });
-
+      res.status(200).json({ message: 'Proje silindi' });
+    } catch (error) {
+      console.error('Proje silme hatası:', error);
+      res.status(500).json({ error: 'Proje silinirken hata oluştu' });
+    }
   } else {
-    res.setHeader('Allow', ['GET', 'POST', 'PUT']);
+    res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 } 

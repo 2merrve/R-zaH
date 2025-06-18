@@ -1,87 +1,68 @@
 import React from 'react';
-import { getProjeler } from '../lib/db';
-import { GetServerSidePropsContext } from 'next';
+import { GetServerSideProps } from 'next';
 
 interface ProjeItem {
-  id: string;
-  baslik: string;
-  aciklama: string;
-  durum: string;
-  gorselUrl: string | null;
+  id: number;
+  name: string[];
+  description: string[];
+  status: string[];
+  location: string[];
+  startDate: string[];
+  endDate?: string[];
+  image: string;
+  updatedAt?: string;
+  createdAt?: string[] | string;
 }
 
-export default function Projelerimiz({ projeler }: { projeler: ProjeItem[] }) {
+interface ProjelerProps {
+  projeler: ProjeItem[];
+}
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const filePath = path.join(process.cwd(), 'data', 'projects.json');
+    const fileData = fs.readFileSync(filePath, 'utf-8');
+    const projeler = JSON.parse(fileData);
+    return { props: { projeler } };
+  } catch (error) {
+    console.error('Projeler yüklenirken hata:', error);
+    return { props: { projeler: [] } };
+  }
+};
+
+export default function Projelerimiz({ projeler }: ProjelerProps) {
   return (
-    <div style={{
-      minHeight: '100vh',
-      color: '#333',
-      display: 'flex',
-      flexDirection: 'column',
-      position: 'relative',
-      zIndex: 1,
-      background: '#ffffff'
-    }}>
-      <section style={{
-        width: '100%',
-        textAlign: 'center',
-        padding: '40px 0 20px 0',
-        background: '#fff',
+    <div style={{ maxWidth: 1200, margin: '40px auto', padding: 24 }}>
+      <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 32 }}>Projelerimiz</h1>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 32,
+        justifyContent: 'center',
       }}>
-        <h1 style={{
-          fontSize: 48,
-          fontWeight: 'bold',
-          marginBottom: 20,
-          letterSpacing: 2,
-          color: '#222',
-        }}>Projelerimiz</h1>
-      </section>
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 16px', position: 'relative', zIndex: 1, width: '100%' }}>
-        <section style={{
-          maxWidth: 1200,
-          width: '100%',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: 40,
-          marginBottom: 60,
-          padding: '0 20px',
-        }}>
-          {projeler.map((proje) => (
-            <div key={proje.id} style={{
-              background: '#fafafa',
-              borderRadius: 12,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              padding: 24,
-              minHeight: 180,
-              justifyContent: 'center',
-            }}>
-              <h2 style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 10, color: '#333' }}>{proje.baslik}</h2>
-              <p style={{ fontSize: 15, color: '#555', marginBottom: 10 }}>{proje.aciklama}</p>
-              <span style={{
-                display: 'inline-block',
-                background: '#e0e0e0',
-                borderRadius: 5,
-                padding: '5px 12px',
-                fontSize: 14,
-                fontWeight: 500,
-                color: '#444',
-              }}>{proje.durum}</span>
+        {projeler.map((proje) => (
+          <div key={proje.id} style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 420 }}>
+            {proje.image && (
+              <img src={proje.image} alt={proje.name?.[0] || ''} style={{ width: '100%', height: 180, objectFit: 'cover', borderTopLeftRadius: 14, borderTopRightRadius: 14 }} />
+            )}
+            <div style={{ padding: 20, flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <h3 style={{ fontSize: 22, fontWeight: 700, marginBottom: 10, color: '#23272f' }}>{proje.name?.[0] || ''}</h3>
+              <div style={{ fontSize: 15, color: '#888', marginBottom: 8 }}>
+                <b>Tarih:</b> {proje.startDate?.[0] || '-'}
+              </div>
+              <div style={{ fontSize: 15, color: '#888', marginBottom: 8 }}>
+                <b>Durum:</b> {proje.status?.[0] || '-'}
+              </div>
+              <div style={{ fontSize: 15, color: '#888', marginBottom: 8 }}>
+                <b>Konum:</b> {proje.location?.[0] || '-'}
+              </div>
+              <p style={{ fontSize: 16, color: '#555', marginBottom: 0, flex: 1 }}>{proje.description?.[0] || ''}</p>
             </div>
-          ))}
-        </section>
-      </main>
-      <footer style={{ textAlign: 'center', padding: '25px 0', color: '#888', fontSize: 14, background: '#f0f0f0', borderTop: '1px solid #e0e0e0', position: 'relative', zIndex: 1 }}>
-      </footer>
+          </div>
+        ))}
+      </div>
     </div>
   );
-}
-
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const projeler = await getProjeler();
-  return {
-    props: { projeler },
-  };
 } 

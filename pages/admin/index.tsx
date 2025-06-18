@@ -50,13 +50,6 @@ export default function AdminPanel() {
       color: '#455A64'
     },
     {
-      title: 'Kullanıcıları Yönet',
-      description: 'Kullanıcıları listele, düzenle ve sil',
-      icon: '👤',
-      path: '/admin/users',
-      color: '#388e3c'
-    },
-    {
       title: 'Şifre Değiştir',
       description: 'Admin paneli şifrenizi güncelleyin',
       icon: '🔒',

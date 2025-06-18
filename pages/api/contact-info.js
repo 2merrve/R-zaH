@@ -1,17 +1,36 @@
 import fs from 'fs';
 import path from 'path';
 
-const filePath = path.join(process.cwd(), 'data', 'iletisim.json');
+export default async function handler(req, res) {
+    const filePath = path.join(process.cwd(), 'data', 'iletisim.json');
 
-export default function handler(req, res) {
     if (req.method === 'GET') {
-        const data = fs.readFileSync(filePath, 'utf-8');
-        res.status(200).json(JSON.parse(data));
+        try {
+            const fileData = fs.readFileSync(filePath, 'utf-8');
+            const contactInfo = JSON.parse(fileData);
+            res.status(200).json(contactInfo);
+        } catch (error) {
+            console.error('İletişim bilgileri okuma hatası:', error);
+            res.status(500).json({ error: 'İletişim bilgileri yüklenirken hata oluştu' });
+        }
     } else if (req.method === 'POST') {
-        const { adres, telefon, eposta } = req.body;
-        fs.writeFileSync(filePath, JSON.stringify({ adres, telefon, eposta }, null, 2));
-        res.status(200).json({ success: true });
+        try {
+            const { adres, telefon, eposta } = req.body;
+
+            if (!adres || !telefon || !eposta) {
+                return res.status(400).json({ error: 'Tüm alanlar gereklidir' });
+            }
+
+            const contactInfo = { adres, telefon, eposta };
+            fs.writeFileSync(filePath, JSON.stringify(contactInfo, null, 2));
+
+            res.status(200).json(contactInfo);
+        } catch (error) {
+            console.error('İletişim bilgileri güncelleme hatası:', error);
+            res.status(500).json({ error: 'İletişim bilgileri güncellenirken hata oluştu' });
+        }
     } else {
-        res.status(405).json({ error: 'Method not allowed' });
+        res.setHeader('Allow', ['GET', 'POST']);
+        res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 } 

@@ -1,85 +1,31 @@
 import React from 'react';
-import { getHizmetler, addHizmet, deleteHizmet, updateHizmet } from '../lib/db';
-import { GetServerSidePropsContext } from 'next';
 import Image from 'next/image';
 
-interface HizmetItem {
-  id: string;
-  baslik: string;
-  aciklama: string;
-  gorselUrl: string | null;
-}
+const hizmetler = [
+  {
+    id: 1,
+    baslik: 'Anahtar Teslim İnşaat',
+    aciklama: 'Projelerinizi baştan sona anahtar teslim olarak yönetiyoruz.'
+  },
+  {
+    id: 2,
+    baslik: 'Tadilat ve Yenileme',
+    aciklama: 'Mevcut yapılarınızı modern ve güvenli hale getiriyoruz.'
+  }
+];
 
-export default function Hizmetler({ hizmetler }: { hizmetler: HizmetItem[] }) {
+export default function Hizmetler() {
   return (
-    <div>
-      <h1>Hizmetler</h1>
-      <ul>
-        {hizmetler.map((hizmet: HizmetItem) => (
-          <li key={hizmet.id}>
-            <b>{hizmet.baslik}</b> - {hizmet.aciklama}
-            {hizmet.gorselUrl && <Image src={hizmet.gorselUrl} alt={hizmet.baslik || 'Hizmet görseli'} width={50} height={50} />}
-            <form method="post" style={{ display: 'inline', marginLeft: 8 }}>
-              <input type="hidden" name="sil_id" value={hizmet.id} />
-              <button type="submit">Sil</button>
-            </form>
-            <details style={{ display: 'inline', marginLeft: 8 }}>
-              <summary>Düzenle</summary>
-              <form method="post">
-                <input type="hidden" name="guncelle_id" value={hizmet.id} />
-                <input name="baslik" defaultValue={hizmet.baslik} required />
-                <input name="aciklama" defaultValue={hizmet.aciklama} required />
-                <input name="gorselUrl" defaultValue={hizmet.gorselUrl || ''} />
-                <button type="submit">Kaydet</button>
-              </form>
-            </details>
-          </li>
+    <div style={{ maxWidth: 1000, margin: '40px auto', padding: 24 }}>
+      <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 32 }}>Hizmetlerimiz</h1>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 32 }}>
+        {hizmetler.map((item) => (
+          <div key={item.id} style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 12px rgba(0,0,0,0.08)', padding: 24 }}>
+            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 10 }}>{item.baslik}</h3>
+            <p style={{ fontSize: 15, color: '#555', marginBottom: 0 }}>{item.aciklama}</p>
+          </div>
         ))}
-      </ul>
-      <h2>Yeni Hizmet Ekle</h2>
-      <form method="post">
-        <input name="baslik" placeholder="Başlık" required />
-        <input name="aciklama" placeholder="Açıklama" required />
-        <input name="gorselUrl" placeholder="Görsel URL" />
-        <button type="submit">Ekle</button>
-      </form>
+      </div>
     </div>
   );
-}
-
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-  if (context.req.method === 'POST') {
-    const body = await new Promise<{ sil_id?: string; guncelle_id?: string; baslik?: string; aciklama?: string; gorselUrl?: string; resim?: string; fiyat?: string }>((resolve) => {
-      let data = '';
-      context.req.on('data', (chunk: string) => { data += chunk; });
-      context.req.on('end', () => {
-        resolve(Object.fromEntries(new URLSearchParams(data)));
-      });
-    });
-    if (body.sil_id) {
-      await deleteHizmet(body.sil_id);
-    } else if (body.guncelle_id) {
-      await updateHizmet(Number(body.guncelle_id), {
-        baslik: body.baslik,
-        aciklama: body.aciklama,
-        resim: body.resim,
-        fiyat: Number(body.fiyat)
-      });
-    } else if (body.baslik && body.aciklama) {
-      await addHizmet({
-        baslik: body.baslik,
-        aciklama: body.aciklama,
-        resim: body.resim,
-        fiyat: Number(body.fiyat)
-      });
-    }
-    return {
-      redirect: {
-        destination: '/hizmetler',
-        permanent: false,
-      },
-    };
-  }
-  const hizmetler = await getHizmetler();
-  return { props: { hizmetler } };
 } 

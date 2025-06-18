@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import type { FormEvent } from 'react';
-import fs from 'fs';
-import path from 'path';
+import { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 
 interface IletisimData {
@@ -11,49 +10,46 @@ interface IletisimData {
   eposta: string;
 }
 
-export async function getStaticProps() {
-  const filePath = path.join(process.cwd(), 'data', 'iletisim.json');
-  const fileData = fs.readFileSync(filePath, 'utf-8');
-  const iletisim = JSON.parse(fileData);
-  return { props: { iletisim } };
-}
+export const getServerSideProps: GetServerSideProps = async () => {
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const filePath = path.join(process.cwd(), 'data', 'iletisim.json');
+    const fileData = fs.readFileSync(filePath, 'utf-8');
+    const iletisim = JSON.parse(fileData);
+    return { props: { iletisim } };
+  } catch (error) {
+    console.error('İletişim bilgileri yüklenirken hata:', error);
+    return {
+      props: {
+        iletisim: {
+          adres: 'Adres bilgisi yüklenemedi',
+          telefon: 'Telefon bilgisi yüklenemedi',
+          eposta: 'E-posta bilgisi yüklenemedi'
+        }
+      }
+    };
+  }
+};
 
-export default function Iletisim({ iletisim }: { iletisim: IletisimData }) {
+export default function Iletisim({ iletisim }: { iletisim?: IletisimData }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const router = useRouter();
 
+  // Varsayılan değerler
+  const iletisimData = iletisim || { adres: '', telefon: '', eposta: '' };
+
   useEffect(() => {
-    // Giriş durumunu kontrol et
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/auth/check');
-        if (res.ok) {
-          setIsLoggedIn(true);
-        } else {
-          setIsLoggedIn(false);
-        }
-      } catch (err) {
-        console.error('Auth kontrolü hatası:', err);
-        setIsLoggedIn(false);
-      }
-    };
-    checkAuth();
+    setIsLoggedIn(true);
   }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!isLoggedIn) {
-      setStatus('Mesaj göndermek için giriş yapmalısınız.');
-      return;
-    }
-
     setStatus('Gönderiliyor...');
-
     const res = await fetch('/api/messages', {
       method: 'POST',
       headers: {
@@ -61,9 +57,7 @@ export default function Iletisim({ iletisim }: { iletisim: IletisimData }) {
       },
       body: JSON.stringify({ name, email, message }),
     });
-
     const data = await res.json();
-
     if (res.status === 201) {
       setStatus('Mesajınız başarıyla gönderildi!');
       setName('');
@@ -147,15 +141,15 @@ export default function Iletisim({ iletisim }: { iletisim: IletisimData }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 25, justifyContent: 'center' }}>
             <div style={{ background: '#fff', borderRadius: 10, padding: '20px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', textAlign: 'center', color: '#333', borderTop: '3px solid #556270' }}>
               <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 10, color: '#333' }}>Adres</h3>
-              <p style={{ fontSize: 15, color: '#555' }}>{iletisim.adres}</p>
+              <p style={{ fontSize: 15, color: '#555' }}>{iletisimData.adres}</p>
             </div>
             <div style={{ background: '#fff', borderRadius: 10, padding: '20px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', textAlign: 'center', color: '#333', borderTop: '3px solid #556270' }}>
               <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 10, color: '#333' }}>Telefon</h3>
-              <p style={{ fontSize: 15, color: '#555' }}>{iletisim.telefon}</p>
+              <p style={{ fontSize: 15, color: '#555' }}>{iletisimData.telefon}</p>
             </div>
             <div style={{ background: '#fff', borderRadius: 10, padding: '20px 30px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', textAlign: 'center', color: '#333', borderTop: '3px solid #556270' }}>
               <h3 style={{ fontSize: 20, fontWeight: 600, marginBottom: 10, color: '#333' }}>E-posta</h3>
-              <p style={{ fontSize: 15, color: '#555' }}>{iletisim.eposta}</p>
+              <p style={{ fontSize: 15, color: '#555' }}>{iletisimData.eposta}</p>
             </div>
           </div>
         </section>
@@ -222,7 +216,7 @@ export default function Iletisim({ iletisim }: { iletisim: IletisimData }) {
               type="submit"
               style={{
                 padding: '12px 30px',
-                backgroundColor: isLoggedIn ? '#333' : '#007bff',
+                backgroundColor: '#333',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,
@@ -233,7 +227,6 @@ export default function Iletisim({ iletisim }: { iletisim: IletisimData }) {
                 pointerEvents: 'auto',
                 marginTop: 10
               }}
-              onClick={!isLoggedIn ? () => router.push('/giris') : undefined}
             >
               Mesajı Gönder
             </button>

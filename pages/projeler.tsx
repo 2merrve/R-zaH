@@ -1,9 +1,6 @@
 import React from 'react';
-import { getProjeler, addProje, deleteProje, updateProje } from '../lib/db';
-import { GetServerSidePropsContext } from 'next';
+import { GetServerSideProps } from 'next';
 import Image from 'next/image';
-import fs from 'fs';
-import path from 'path';
 
 interface Proje {
   id: number;
@@ -19,12 +16,19 @@ interface ProjelerProps {
   projects: Proje[];
 }
 
-export async function getServerSideProps() {
-  const filePath = path.join(process.cwd(), 'data', 'projects.json');
-  const fileData = fs.readFileSync(filePath, 'utf-8');
-  const projects = JSON.parse(fileData);
-  return { props: { projects } };
-}
+export const getServerSideProps: GetServerSideProps = async () => {
+  try {
+    const fs = await import('fs');
+    const path = await import('path');
+    const filePath = path.join(process.cwd(), 'data', 'projects.json');
+    const fileData = fs.readFileSync(filePath, 'utf-8');
+    const projects = JSON.parse(fileData);
+    return { props: { projects } };
+  } catch (error) {
+    console.error('Projeler yüklenirken hata:', error);
+    return { props: { projects: [] } };
+  }
+};
 
 export default function Projeler({ projects }: ProjelerProps) {
   return (
