@@ -29,7 +29,7 @@ interface User {
 
 export async function verifyUser(email: string, password: string): Promise<User | null> {
   const result = await sql`SELECT * FROM users WHERE email = ${email}`;
-  const user = result.rows[0];
+  const user = result.rows[0] as User | undefined;
 
   if (user && user.password && await bcrypt.compare(password, user.password)) {
     return user;
@@ -117,7 +117,7 @@ export async function addUser(name: string, email: string, password: string) {
 
 export async function getUsers(): Promise<User[]> {
   const result = await sql`SELECT id, name, email FROM users`;
-  return result.rows;
+  return result.rows as User[];
 }
 
 export async function updateUser(id: number, name: string, email: string) {
