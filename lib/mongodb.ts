@@ -1,10 +1,12 @@
 import mongoose from 'mongoose';
 
+interface MongooseCache {
+    conn: typeof mongoose | null;
+    promise: Promise<typeof mongoose> | null;
+}
+
 declare global {
-    var mongoose: {
-        conn: typeof mongoose | null;
-        promise: Promise<typeof mongoose> | null;
-    };
+    var mongoose: MongooseCache | undefined;
 }
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://your-connection-string';
@@ -13,10 +15,10 @@ if (!MONGODB_URI) {
     throw new Error('MongoDB URI tanımlanmamış');
 }
 
-let cached = global.mongoose;
+let cached: MongooseCache = global.mongoose || { conn: null, promise: null };
 
-if (!cached) {
-    cached = global.mongoose = { conn: null, promise: null };
+if (!global.mongoose) {
+    global.mongoose = cached;
 }
 
 async function connectDB() {
@@ -25,9 +27,19 @@ async function connectDB() {
     }
 
     if (!cached.promise) {
-        cached.promise = mongoose.connect(MONGODB_URI);
+        const opts = {
+            bufferCommands: false,
+        };
+        cached.promise = mongoose.connect(MONGODB_URI, opts);
     }
-    cached.conn = await cached.promise;
+
+    try {
+        cached.conn = await cached.promise;
+    } catch (e) {
+        cached.promise = null;
+        throw e;
+    }
+
     return cached.conn;
 }
 
