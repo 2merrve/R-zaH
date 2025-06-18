@@ -1,0 +1,28 @@
+[
+  {
+    "id": 1749583416842,
+    "name": [
+      "Gökmen Villa"
+    ],
+    "description": [
+      "Konyada yeni soluk"
+    ],
+    "status": [
+      "devam_ediyor"
+    ],
+    "location": [
+      "Konya"
+    ],
+    "startDate": [
+      "2023-03-12"
+    ],
+    "endDate": [
+      "2027-04-20"
+    ],
+    "image": "/uploads/vjjk01z98siwqimr2buqn3s3h.jpeg",
+    "updatedAt": "2025-06-17T18:12:17.343Z",
+    "createdAt": [
+      "2025-06-10T19:23:36.842Z"
+    ]
+  }
+]
