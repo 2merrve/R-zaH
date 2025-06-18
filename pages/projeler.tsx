@@ -1,7 +1,23 @@
 import React from 'react';
+import { getProjeler, addProje, deleteProje, updateProje } from '../lib/db';
+import { GetServerSidePropsContext } from 'next';
 import Image from 'next/image';
 import fs from 'fs';
 import path from 'path';
+
+interface Proje {
+  id: number;
+  baslik: string;
+  aciklama: string;
+  resim: string;
+  kategori: string;
+  konum: string;
+  tarih: string;
+}
+
+interface ProjelerProps {
+  projects: Proje[];
+}
 
 export async function getServerSideProps() {
   const filePath = path.join(process.cwd(), 'data', 'projects.json');
@@ -10,7 +26,7 @@ export async function getServerSideProps() {
   return { props: { projects } };
 }
 
-export default function Projeler({ projects = [] }) {
+export default function Projeler({ projects }: ProjelerProps) {
   return (
     <div style={{
       minHeight: '100vh',
@@ -70,11 +86,11 @@ export default function Projeler({ projects = [] }) {
                   border: '1.5px solid #f0f0f0',
                 }}
               >
-                {proje.image && (
+                {proje.resim && (
                   <div style={{ position: 'relative', width: '100%', height: 320, maxWidth: '100%', margin: '0 auto' }}>
                     <Image
-                      src={proje.image}
-                      alt={Array.isArray(proje.name) ? proje.name[0] : proje.name}
+                      src={proje.resim}
+                      alt={Array.isArray(proje.baslik) ? proje.baslik[0] : proje.baslik}
                       fill
                       sizes="350px"
                       style={{ objectFit: 'cover', borderRadius: 0 }}
@@ -82,13 +98,13 @@ export default function Projeler({ projects = [] }) {
                   </div>
                 )}
                 <div style={{ padding: 20 }}>
-                  <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 12, color: '#23272f', letterSpacing: 0.2, lineHeight: 1.2 }}>{Array.isArray(proje.name) ? proje.name[0] : proje.name}</h3>
-                  <p style={{ fontSize: 16, color: '#555', marginBottom: 12, lineHeight: 1.6 }}>{Array.isArray(proje.description) ? proje.description[0] : proje.description}</p>
+                  <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 12, color: '#23272f', letterSpacing: 0.2, lineHeight: 1.2 }}>{Array.isArray(proje.baslik) ? proje.baslik[0] : proje.baslik}</h3>
+                  <p style={{ fontSize: 16, color: '#555', marginBottom: 12, lineHeight: 1.6 }}>{Array.isArray(proje.aciklama) ? proje.aciklama[0] : proje.aciklama}</p>
                   <div style={{ fontSize: 14, color: '#666', marginBottom: 6 }}>
-                    <b>Konum:</b> {Array.isArray(proje.location) ? proje.location[0] : proje.location}
+                    <b>Konum:</b> {Array.isArray(proje.konum) ? proje.konum[0] : proje.konum}
                   </div>
                   <div style={{ fontSize: 14, color: '#666', marginBottom: 6 }}>
-                    <b>Tarih:</b> {Array.isArray(proje.startDate) ? proje.startDate[0] : proje.startDate}
+                    <b>Tarih:</b> {Array.isArray(proje.tarih) ? proje.tarih[0] : proje.tarih}
                   </div>
                 </div>
               </div>

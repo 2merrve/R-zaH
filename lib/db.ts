@@ -382,4 +382,32 @@ export async function updateHizmet(id: number, data: {
     console.error('Hizmet güncelleme hatası:', error);
     throw error;
   }
+}
+
+export async function updateProje(id: number, data: {
+  baslik?: string;
+  aciklama?: string;
+  resim?: string;
+  kategori?: string;
+  konum?: string;
+  tarih?: string;
+}) {
+  try {
+    const result = await sql`
+      UPDATE projeler 
+      SET 
+        baslik = COALESCE(${data.baslik}, baslik),
+        aciklama = COALESCE(${data.aciklama}, aciklama),
+        resim = COALESCE(${data.resim}, resim),
+        kategori = COALESCE(${data.kategori}, kategori),
+        konum = COALESCE(${data.konum}, konum),
+        tarih = COALESCE(${data.tarih}, tarih)
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    return result.rows[0];
+  } catch (error) {
+    console.error('Proje güncelleme hatası:', error);
+    throw error;
+  }
 } 
