@@ -1,5 +1,6 @@
 import React from 'react';
 import { GetServerSideProps } from 'next';
+import pool from '../lib/db';
 
 interface ProjeItem {
   id: number;
@@ -20,12 +21,8 @@ interface ProjelerProps {
 
 export const getServerSideProps: GetServerSideProps = async () => {
   try {
-    const fs = await import('fs');
-    const path = await import('path');
-    const filePath = path.join(process.cwd(), 'data', 'projects.json');
-    const fileData = fs.readFileSync(filePath, 'utf-8');
-    const projeler = JSON.parse(fileData);
-    return { props: { projeler } };
+    const { rows } = await pool.query('SELECT * FROM projects ORDER BY id DESC');
+    return { props: { projeler: rows } };
   } catch (error) {
     console.error('Projeler yüklenirken hata:', error);
     return { props: { projeler: [] } };

@@ -10,11 +10,14 @@ interface Message {
   createdAt: string;
   isRead: boolean;
   updatedAt?: string;
+  reply?: string;
 }
 
 export default function AdminMessages() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [reply, setReply] = useState('');
+  const [replyStatus, setReplyStatus] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -24,7 +27,7 @@ export default function AdminMessages() {
   const fetchMessages = async () => {
     const res = await fetch('/api/messages');
     const data = await res.json();
-    setMessages(data);
+    setMessages(Array.isArray(data) ? data : []);
   };
 
   const handleMarkAsRead = async (messageId: number) => {
@@ -59,6 +62,23 @@ export default function AdminMessages() {
 
   const handleGoBack = () => {
     router.push('/admin');
+  };
+
+  const handleReply = async () => {
+    if (!selectedMessage) return;
+    setReplyStatus('Gönderiliyor...');
+    const res = await fetch(`/api/messages?id=${selectedMessage.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reply }),
+    });
+    if (res.ok) {
+      setReply('');
+      setReplyStatus('Cevap gönderildi!');
+      await fetchMessages();
+    } else {
+      setReplyStatus('Cevap gönderilemedi!');
+    }
   };
 
   return (
@@ -126,6 +146,31 @@ export default function AdminMessages() {
               <button className="logout-button" style={{ marginLeft: 10, background: '#b71c1c' }} onClick={() => handleDeleteMessage(selectedMessage.id)}>
                 Mesajı Sil
               </button>
+
+              <div style={{ marginTop: 24 }}>
+                <h3>Cevapla</h3>
+                {selectedMessage.reply ? (
+                  <div style={{ background: '#333', padding: 12, borderRadius: 6, marginBottom: 8 }}>
+                    <b>Verilen Cevap:</b>
+                    <div>{selectedMessage.reply}</div>
+                  </div>
+                ) : (
+                  <>
+                    <textarea
+                      value={reply}
+                      onChange={e => setReply(e.target.value)}
+                      placeholder="Cevabınızı yazın..."
+                      style={{ width: '100%', minHeight: 80, borderRadius: 6, padding: 8, marginBottom: 8 }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button className="mark-read-button" onClick={handleReply} style={{ marginRight: 8 }}>
+                        Cevapla
+                      </button>
+                      {replyStatus && <span>{replyStatus}</span>}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           ) : (
             <div className="no-message-selected">

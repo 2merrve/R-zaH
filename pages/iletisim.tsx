@@ -11,25 +11,15 @@ interface IletisimData {
 }
 
 export const getServerSideProps: GetServerSideProps = async () => {
-  try {
-    const fs = await import('fs');
-    const path = await import('path');
-    const filePath = path.join(process.cwd(), 'data', 'iletisim.json');
-    const fileData = fs.readFileSync(filePath, 'utf-8');
-    const iletisim = JSON.parse(fileData);
-    return { props: { iletisim } };
-  } catch (error) {
-    console.error('İletişim bilgileri yüklenirken hata:', error);
-    return {
-      props: {
-        iletisim: {
-          adres: 'Adres bilgisi yüklenemedi',
-          telefon: 'Telefon bilgisi yüklenemedi',
-          eposta: 'E-posta bilgisi yüklenemedi'
-        }
+  return {
+    props: {
+      iletisim: {
+        adres: 'Adres bilgisi buraya gelecek',
+        telefon: 'Telefon bilgisi buraya gelecek',
+        eposta: 'E-posta bilgisi buraya gelecek'
       }
-    };
-  }
+    }
+  };
 };
 
 export default function Iletisim({ iletisim }: { iletisim?: IletisimData }) {
@@ -37,15 +27,10 @@ export default function Iletisim({ iletisim }: { iletisim?: IletisimData }) {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const router = useRouter();
 
   // Varsayılan değerler
   const iletisimData = iletisim || { adres: '', telefon: '', eposta: '' };
-
-  useEffect(() => {
-    setIsLoggedIn(true);
-  }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -93,8 +78,8 @@ export default function Iletisim({ iletisim }: { iletisim?: IletisimData }) {
         <Image
           src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1600&q=80"
           alt="Şehir İnşaatı"
-          layout="fill"
-          objectFit="cover"
+          fill
+          style={{ objectFit: 'cover' }}
           quality={100}
           priority
         />

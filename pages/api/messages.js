@@ -1,14 +1,10 @@
-import fs from 'fs';
-import path from 'path';
+import pool from '../../lib/db';
 
 export default async function handler(req, res) {
-  const filePath = path.join(process.cwd(), 'data', 'messages.json');
-
   if (req.method === 'GET') {
     try {
-      const fileData = fs.readFileSync(filePath, 'utf-8');
-      const messages = JSON.parse(fileData);
-      res.status(200).json(messages);
+      const { rows } = await pool.query('SELECT * FROM messages ORDER BY id DESC');
+      res.status(200).json(rows);
     } catch (error) {
       console.error('Mesajlar okuma hatası:', error);
       res.status(500).json({ error: 'Mesajlar yüklenirken hata oluştu' });
@@ -16,27 +12,14 @@ export default async function handler(req, res) {
   } else if (req.method === 'POST') {
     try {
       const { name, email, message } = req.body;
-
       if (!name || !email || !message) {
         return res.status(400).json({ error: 'Tüm alanlar gereklidir' });
       }
-
-      const fileData = fs.readFileSync(filePath, 'utf-8');
-      const messages = JSON.parse(fileData);
-
-      const newMessage = {
-        id: Date.now(),
-        name,
-        email,
-        message,
-        isRead: false,
-        createdAt: new Date().toISOString()
-      };
-
-      messages.push(newMessage);
-      fs.writeFileSync(filePath, JSON.stringify(messages, null, 2));
-
-      res.status(201).json(newMessage);
+      const result = await pool.query(
+        `INSERT INTO messages (name, email, message) VALUES ($1, $2, $3) RETURNING *`,
+        [name, email, message]
+      );
+      res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error('Mesaj ekleme hatası:', error);
       res.status(500).json({ error: 'Mesaj eklenirken hata oluştu' });
@@ -44,20 +27,23 @@ export default async function handler(req, res) {
   } else if (req.method === 'PUT') {
     try {
       const { id } = req.query;
-      const { isRead } = req.body;
-
-      const fileData = fs.readFileSync(filePath, 'utf-8');
-      const messages = JSON.parse(fileData);
-
-      const messageIndex = messages.findIndex(m => m.id === parseInt(id));
-      if (messageIndex === -1) {
-        return res.status(404).json({ error: 'Mesaj bulunamadı' });
+      const { isRead, reply } = req.body;
+      let query = 'UPDATE messages SET ';
+      const params = [];
+      let idx = 1;
+      if (isRead !== undefined) {
+        query += `is_read=$${idx++},`;
+        params.push(isRead);
       }
-
-      messages[messageIndex].isRead = isRead;
-      fs.writeFileSync(filePath, JSON.stringify(messages, null, 2));
-
-      res.status(200).json(messages[messageIndex]);
+      if (reply !== undefined) {
+        query += `reply=$${idx++},replied_at=NOW(),`;
+        params.push(reply);
+      }
+      query = query.replace(/,$/, '');
+      query += ` WHERE id=$${idx} RETURNING *`;
+      params.push(id);
+      const result = await pool.query(query, params);
+      res.status(200).json(result.rows[0]);
     } catch (error) {
       console.error('Mesaj güncelleme hatası:', error);
       res.status(500).json({ error: 'Mesaj güncellenirken hata oluştu' });
@@ -65,13 +51,7 @@ export default async function handler(req, res) {
   } else if (req.method === 'DELETE') {
     try {
       const { id } = req.query;
-
-      const fileData = fs.readFileSync(filePath, 'utf-8');
-      const messages = JSON.parse(fileData);
-
-      const filteredMessages = messages.filter(m => m.id !== parseInt(id));
-      fs.writeFileSync(filePath, JSON.stringify(filteredMessages, null, 2));
-
+      await pool.query('DELETE FROM messages WHERE id=$1', [id]);
       res.status(200).json({ message: 'Mesaj silindi' });
     } catch (error) {
       console.error('Mesaj silme hatası:', error);

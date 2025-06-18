@@ -2,15 +2,12 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { GetServerSideProps } from 'next';
+import pool from '../lib/db';
 
 export const getServerSideProps: GetServerSideProps = async () => {
   try {
-    const fs = await import('fs');
-    const path = await import('path');
-    const filePath = path.join(process.cwd(), 'data', 'projects.json');
-    const fileData = fs.readFileSync(filePath, 'utf-8');
-    const projects = JSON.parse(fileData);
-    return { props: { projects } };
+    const { rows } = await pool.query('SELECT * FROM projects ORDER BY id DESC');
+    return { props: { projects: rows } };
   } catch (error) {
     console.error('Projeler yüklenirken hata:', error);
     return { props: { projects: [] } };
@@ -42,12 +39,12 @@ export default function Home({ projects = [] }) {
       }}>
         {/* Arka Plan Görseli - Yeni ve profesyonel görsel */}
         <Image
-          src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1600&q=80" // Yeni inşaat görseli URL'si (Unsplash)
+          src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1600&q=80"
           alt="Şehir İnşaatı"
-          layout="fill"
-          objectFit="cover"
+          fill
+          style={{ objectFit: 'cover' }}
           quality={100}
-          priority // Yüksek öncelikli yükleme
+          priority
         />
         {/* Üzerine Gelen Overlay */}
         <div style={{
@@ -133,18 +130,16 @@ export default function Home({ projects = [] }) {
                 <Image
                   src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=800&q=80"
                   alt="Modern İnşaat"
-                  layout="fill"
-                  objectFit="cover"
-                  style={{ filter: 'grayscale(30%)' }}
+                  fill
+                  style={{ objectFit: 'cover', filter: 'grayscale(30%)' }}
                 />
               </div>
               <div style={{ position: 'relative', height: 200, borderRadius: 10, overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
                 <Image
                   src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=800&q=80"
                   alt="Profesyonel Ekip"
-                  layout="fill"
-                  objectFit="cover"
-                  style={{ filter: 'grayscale(50%)' }}
+                  fill
+                  style={{ objectFit: 'cover', filter: 'grayscale(50%)' }}
                 />
               </div>
             </div>

@@ -1,58 +1,38 @@
 import formidable from 'formidable';
 import fs from 'fs';
 import path from 'path';
+import pool from '../../lib/db';
 
-const projectsFilePath = path.join(process.cwd(), 'data', 'projects.json');
 const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-
-// Ensure uploads directory exists
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const config = { api: { bodyParser: false } };
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      const filePath = path.join(process.cwd(), 'data', 'projects.json');
-      const fileData = fs.readFileSync(filePath, 'utf-8');
-      const projects = JSON.parse(fileData);
-      res.status(200).json(projects);
+      const { rows } = await pool.query('SELECT * FROM projects ORDER BY id DESC');
+      res.status(200).json(rows);
     } catch (error) {
       console.error('Projeler okuma hatası:', error);
       res.status(500).json({ error: 'Projeler yüklenirken hata oluştu' });
     }
   } else if (req.method === 'POST') {
     try {
-      const form = formidable();
+      const form = formidable({ uploadDir: uploadsDir, keepExtensions: true });
       const [fields, files] = await form.parse(req);
-
-      const filePath = path.join(process.cwd(), 'data', 'projects.json');
-      const fileData = fs.readFileSync(filePath, 'utf-8');
-      const projects = JSON.parse(fileData);
-
-      const newProject = {
-        id: Date.now(),
-        name: [fields.name?.[0] || ''],
-        description: [fields.description?.[0] || ''],
-        status: [fields.status?.[0] || 'planlandı'],
-        location: [fields.location?.[0] || ''],
-        startDate: [fields.startDate?.[0] || ''],
-        endDate: fields.endDate?.[0] ? [fields.endDate[0]] : undefined,
-        image: files.image?.[0] ? `/uploads/${files.image[0].newFilename}` : '',
-        createdAt: [new Date().toISOString()],
-        updatedAt: new Date().toISOString()
-      };
-
-      projects.push(newProject);
-      fs.writeFileSync(filePath, JSON.stringify(projects, null, 2));
-
-      res.status(201).json(newProject);
+      let imagePath = '';
+      if (files.image && files.image[0]) {
+        imagePath = `/uploads/${path.basename(files.image[0].filepath)}`;
+      }
+      const { name, description, status, location, startDate, endDate } = fields;
+      const result = await pool.query(
+        `INSERT INTO projects (name, description, status, location, start_date, end_date, image) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+        [name?.[0] || '', description?.[0] || '', status?.[0] || 'planlandı', location?.[0] || '', startDate?.[0] || '', endDate?.[0] || '', imagePath]
+      );
+      res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error('Proje ekleme hatası:', error);
       res.status(500).json({ error: 'Proje eklenirken hata oluştu' });
@@ -60,32 +40,18 @@ export default async function handler(req, res) {
   } else if (req.method === 'PUT') {
     try {
       const { id } = req.query;
-      const form = formidable();
+      const form = formidable({ uploadDir: uploadsDir, keepExtensions: true });
       const [fields, files] = await form.parse(req);
-
-      const filePath = path.join(process.cwd(), 'data', 'projects.json');
-      const fileData = fs.readFileSync(filePath, 'utf-8');
-      const projects = JSON.parse(fileData);
-
-      const projectIndex = projects.findIndex(p => p.id === parseInt(id));
-      if (projectIndex === -1) {
-        return res.status(404).json({ error: 'Proje bulunamadı' });
+      let imagePath = fields.image?.[0] || '';
+      if (files.image && files.image[0]) {
+        imagePath = `/uploads/${path.basename(files.image[0].filepath)}`;
       }
-
-      projects[projectIndex] = {
-        ...projects[projectIndex],
-        name: [fields.name?.[0] || projects[projectIndex].name?.[0] || ''],
-        description: [fields.description?.[0] || projects[projectIndex].description?.[0] || ''],
-        status: [fields.status?.[0] || projects[projectIndex].status?.[0] || 'planlandı'],
-        location: [fields.location?.[0] || projects[projectIndex].location?.[0] || ''],
-        startDate: [fields.startDate?.[0] || projects[projectIndex].startDate?.[0] || ''],
-        endDate: fields.endDate?.[0] ? [fields.endDate[0]] : projects[projectIndex].endDate,
-        image: files.image?.[0] ? `/uploads/${files.image[0].newFilename}` : projects[projectIndex].image,
-        updatedAt: new Date().toISOString()
-      };
-
-      fs.writeFileSync(filePath, JSON.stringify(projects, null, 2));
-      res.status(200).json(projects[projectIndex]);
+      const { name, description, status, location, startDate, endDate } = fields;
+      const result = await pool.query(
+        `UPDATE projects SET name=$1, description=$2, status=$3, location=$4, start_date=$5, end_date=$6, image=$7, updated_at=NOW() WHERE id=$8 RETURNING *`,
+        [name?.[0] || '', description?.[0] || '', status?.[0] || 'planlandı', location?.[0] || '', startDate?.[0] || '', endDate?.[0] || '', imagePath, id]
+      );
+      res.status(200).json(result.rows[0]);
     } catch (error) {
       console.error('Proje güncelleme hatası:', error);
       res.status(500).json({ error: 'Proje güncellenirken hata oluştu' });
@@ -93,13 +59,7 @@ export default async function handler(req, res) {
   } else if (req.method === 'DELETE') {
     try {
       const { id } = req.query;
-      const filePath = path.join(process.cwd(), 'data', 'projects.json');
-      const fileData = fs.readFileSync(filePath, 'utf-8');
-      const projects = JSON.parse(fileData);
-
-      const filteredProjects = projects.filter(p => p.id !== parseInt(id));
-      fs.writeFileSync(filePath, JSON.stringify(filteredProjects, null, 2));
-
+      await pool.query('DELETE FROM projects WHERE id=$1', [id]);
       res.status(200).json({ message: 'Proje silindi' });
     } catch (error) {
       console.error('Proje silme hatası:', error);

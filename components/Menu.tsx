@@ -26,7 +26,6 @@ export default function Menu() {
                 <Link href="/" style={{ color: '#23272f', fontWeight: 500, fontSize: 18, textDecoration: 'none' }}>Anasayfa</Link>
                 <Link href="/hakkimizda" style={{ color: '#23272f', fontWeight: 500, fontSize: 18, textDecoration: 'none' }}>Hakkımızda</Link>
                 <Link href="/faaliyetler" style={{ color: '#23272f', fontWeight: 500, fontSize: 18, textDecoration: 'none' }}>Faaliyetlerimiz</Link>
-                <Link href="/projelerimiz" style={{ color: '#23272f', fontWeight: 500, fontSize: 18, textDecoration: 'none' }}>Projelerimiz</Link>
             </div>
         </nav>
     );
