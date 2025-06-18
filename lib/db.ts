@@ -283,4 +283,30 @@ export async function addBlog(data: {
     console.error('Blog ekleme hatası:', error);
     throw error;
   }
+}
+
+export async function updateBlog(id: number, data: {
+  baslik?: string;
+  icerik?: string;
+  resim?: string;
+  yazar?: string;
+  tarih?: string;
+}) {
+  try {
+    const result = await sql`
+      UPDATE blog 
+      SET 
+        baslik = COALESCE(${data.baslik}, baslik),
+        icerik = COALESCE(${data.icerik}, icerik),
+        resim = COALESCE(${data.resim}, resim),
+        yazar = COALESCE(${data.yazar}, yazar),
+        tarih = COALESCE(${data.tarih}, tarih)
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    return result.rows[0];
+  } catch (error) {
+    console.error('Blog güncelleme hatası:', error);
+    throw error;
+  }
 } 
