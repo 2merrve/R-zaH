@@ -94,15 +94,21 @@ export async function getHizmetler() {
   }
 }
 
-export async function addHizmet(baslik: string, aciklama: string, gorselUrl: string | null) {
+export async function addHizmet(data: {
+  baslik: string;
+  aciklama: string;
+  resim?: string;
+  fiyat?: number;
+}) {
   try {
-    return await sql`
-      INSERT INTO hizmetler (baslik, aciklama, gorselUrl)
-      VALUES (${baslik}, ${aciklama}, ${gorselUrl})
+    const result = await sql`
+      INSERT INTO hizmetler (baslik, aciklama, resim, fiyat)
+      VALUES (${data.baslik}, ${data.aciklama}, ${data.resim}, ${data.fiyat})
       RETURNING *
     `;
+    return result.rows[0];
   } catch (error) {
-    console.error('Add hizmet error:', error);
+    console.error('Hizmet ekleme hatası:', error);
     throw error;
   }
 }
@@ -350,6 +356,30 @@ export async function updateGaleri(id: number, data: {
     return result.rows[0];
   } catch (error) {
     console.error('Galeri güncelleme hatası:', error);
+    throw error;
+  }
+}
+
+export async function updateHizmet(id: number, data: {
+  baslik?: string;
+  aciklama?: string;
+  resim?: string;
+  fiyat?: number;
+}) {
+  try {
+    const result = await sql`
+      UPDATE hizmetler 
+      SET 
+        baslik = COALESCE(${data.baslik}, baslik),
+        aciklama = COALESCE(${data.aciklama}, aciklama),
+        resim = COALESCE(${data.resim}, resim),
+        fiyat = COALESCE(${data.fiyat}, fiyat)
+      WHERE id = ${id}
+      RETURNING *
+    `;
+    return result.rows[0];
+  } catch (error) {
+    console.error('Hizmet güncelleme hatası:', error);
     throw error;
   }
 } 

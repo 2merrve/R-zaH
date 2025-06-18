@@ -49,7 +49,7 @@ export default function Hizmetler({ hizmetler }: { hizmetler: HizmetItem[] }) {
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   if (context.req.method === 'POST') {
-    const body = await new Promise<{ sil_id?: string; guncelle_id?: string; baslik?: string; aciklama?: string; gorselUrl?: string }>((resolve) => {
+    const body = await new Promise<{ sil_id?: string; guncelle_id?: string; baslik?: string; aciklama?: string; gorselUrl?: string; resim?: string; fiyat?: string }>((resolve) => {
       let data = '';
       context.req.on('data', (chunk: string) => { data += chunk; });
       context.req.on('end', () => {
@@ -59,11 +59,19 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     if (body.sil_id) {
       await deleteHizmet(body.sil_id);
     } else if (body.guncelle_id) {
-      const gorselUrl = body.gorselUrl === undefined ? null : body.gorselUrl;
-      await updateHizmet(body.guncelle_id, body.baslik!, body.aciklama!, gorselUrl);
+      await updateHizmet(Number(body.guncelle_id), {
+        baslik: body.baslik,
+        aciklama: body.aciklama,
+        resim: body.resim,
+        fiyat: Number(body.fiyat)
+      });
     } else if (body.baslik && body.aciklama) {
-      const gorselUrl = body.gorselUrl === undefined ? null : body.gorselUrl;
-      await addHizmet(body.baslik, body.aciklama, gorselUrl);
+      await addHizmet({
+        baslik: body.baslik,
+        aciklama: body.aciklama,
+        resim: body.resim,
+        fiyat: Number(body.fiyat)
+      });
     }
     return {
       redirect: {
