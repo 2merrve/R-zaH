@@ -1,4 +1,52 @@
-import { sql } from '@vercel/postgres';
+# Query
+
+Query is available on[Pro and Enterprise plans](/docs/plans / enterprise)
+
+Those with the[owner, member, developer](/docs/rbac / access - roles#owner, member, developer - role) role can access this feature
+
+Observability allows you to visualize and quantify the performance and traffic of your projects through creating queries:
+
+Use the chart button on the top right of the Observability tab to create a query.
+
+* View pre - filled queries by clicking the Explore query button on observability charts
+  * Explore query results in detail and use filters to adjust the date, aggregation, and dimensions
+
+![Create query in Observability Tab.](/_next/image ? url = https % 3A % 2F % 2Fassets.vercel.com % 2Fimage % 2Fupload % 2Fv1689795055 % 2Fdocs - assets % 2Fstatic % 2Fdocs % 2Fquery - builder % 2Fquery - builder - light.png & w=1920 & q=75)![Create query in Observability Tab.](/_next/image ? url = https % 3A % 2F % 2Fassets.vercel.com % 2Fimage % 2Fupload % 2Fv1689795055 % 2Fdocs - assets % 2Fstatic % 2Fdocs % 2Fquery - builder % 2Fquery - builder - dark.png & w=1920 & q=75)
+
+Create query in Observability Tab.
+
+##[Enable Query](#enable - query)
+
+Enabling and disabling Observability Plus are available on[Pro and Enterprise plans](/docs/plans / enterprise)
+
+Those with the[owner](/docs/rbac / access - roles#owner - role) role can access this feature
+
+  * Pro and Enterprise teams should[Upgrade to Observability Plus](/docs/observability#enabling - observability - plus) to edit queries in modal.
+* Free observability users can still open query, but they cannot modify any filters or create new queries.
+
+[Enterprise](/docs/plans / enterprise) teams can[contact sales](/contact/sales) to get a customized plan based on their requirements.
+
+##[Manage IP Address visibility for Query](#manage - ip - address - visibility -for-query)
+
+Managing IP Address visibility is available on[Pro and Enterprise plans](/docs/plans / enterprise)
+
+Those with the[owner, admin](/docs/rbac / access - roles#owner, admin - role) role can access this feature
+
+Vercel creates events each time a request is made to your website.These events include unique parameters such as execution time and bandwidth used.
+
+Certain events such as `public_ip` may be considered personal information under certain data protection laws.To hide IP addresses from your query:
+
+1.  Go to the Vercel[dashboard](/dashboard) and ensure your team is selected in the scope selector.
+2.  Go to the Settings tab and navigate to Security & Privacy.
+3.  Under IP Address Visibility, toggle the switch next to "Off" so the text reads IP addresses are currently hidden in the Vercel Dashboard..
+
+For business purposes, such as DDoS mitigation, Vercel will still collect IP addresses.
+
+##[More resources](#more - resources)
+
+  * [Reference](/docs/observability / query / query - reference)
+
+Last updated on June 19, 2025import { sql } from '@vercel/postgres';
 import pool from './db';
 
 export async function createTables() {
